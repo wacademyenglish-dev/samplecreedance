@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WOLFFY SAMPLE: Have You Ever Seen The Rain</title>
+    <!-- Fonts: Retro & Mono for analog feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@700;900&family=Outfit:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        amp: {
+                            dark: '#1a1a1a',    /* Amp Tolex */
+                            panel: '#222222',   /* Metallic Panel */
+                            grill: '#0f0f0f',   /* Speaker Grill */
+                        },
+                        vintage: {
+                            orange: '#f97316',  /* CCR Orange */
+                            paper: '#fdf6e3',   /* Aged paper */
+                            ink: '#2c1e16',     /* Dark brown ink */
+                            blue: '#0ea5e9',    /* Rain blue */
+                        }
+                    },
+                    fontFamily: {
+                        oswald: ['Oswald', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                        mono: ['"Courier Prime"', 'monospace'],
+                        playfair: ['"Playfair Display"', 'serif'],
+                    },
+                    boxShadow: {
+                        'analog': 'inset 0 2px 4px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.5)',
+                        'knob': '0 4px 6px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.2)',
+                        'paper': 'inset 0 0 40px rgba(0,0,0,0.05), 0 10px 20px rgba(0,0,0,0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base & Resets */
+        body {
+            background-color: #111;
+            background-image: radial-gradient(#222 1px, transparent 1px);
+            background-size: 4px 4px;
+            color: #fff;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            user-select: none;
+        }
+
+        .allow-select { user-select: text; }
+        
+        h1, h2, h3, .title-font { font-family: 'Playfair Display', serif; }
+
+        /* --- SAMPLE WATERMARK --- */
+        .sample-watermark {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='60' fill='rgba(128,128,128,0.2)' font-family='Oswald, sans-serif' font-weight='900' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30 200 200)'%3ESAMPLE%3C/text%3E%3C/svg%3E");
+        }
+
+        /* --- RECORD PLAYER ANIMATIONS --- */
+        .vinyl-spin { animation: spin 4s linear infinite; }
+        .vinyl-paused { animation-play-state: paused; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- ANALOG SCREEN --- */
+        .analog-screen {
+            background-color: #fdf6e3;
+            color: #2c1e16;
+            background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-size: 10px 10px;
+            position: relative;
+        }
+
+        /* --- SLIDE NAVIGATION --- */
+        .slide {
+            display: none; opacity: 0; width: 100%; min-height: 100%;
+            flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px 20px;
+        }
+        .slide.active { display: flex; animation: fadeIn 0.4s ease-out forwards; }
+        .slide::before, .slide::after { content: ''; margin: auto; }
+        .slide > * { flex-shrink: 0; max-width: 100%; z-index: 20; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.99) translateY(5px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* --- UI ELEMENTS PRO MODE --- */
+        .chunky-btn {
+            background: linear-gradient(to bottom, #4a4a4a, #2d2d2d);
+            border: 1px solid #1a1a1a; transition: all 0.1s;
+        }
+        .chunky-btn:active { transform: translateY(1px); background: #2d2d2d; }
+        
+        .mcq-btn { transition: all 0.2s ease; }
+        .mcq-btn:hover { border-color: #f97316; background: rgba(255,255,255,0.8); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(249,115,22,0.15);}
+
+        .polaroid { transition: transform 0.3s; background: white; padding: 15px; padding-bottom: 35px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; cursor: pointer; }
+        .polaroid:hover { transform: scale(1.05) rotate(-2deg); z-index: 10; }
+
+        .lyric-highlight { color: #f97316; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; transition: border-color 0.3s; }
+        .lyric-highlight:hover { border-color: #f97316; }
+
+        .shake { animation: shake 0.4s both; border-color: #ef4444 !important; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+            40%, 60% { transform: translate3d(3px, 0, 0); }
+        }
+
+        .confetti { position: absolute; width: 12px; height: 12px; background-color: #f97316; opacity: 0; z-index: 9999; pointer-events: none;}
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        
+        .no-scroll::-webkit-scrollbar { display: none; }
+        .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Tape Splicer PRO */
+        .tape-blank { display: inline-block; min-width: 100px; height: 42px; border-bottom: 4px solid #2c1e16; margin: 0 10px; vertical-align: middle; text-align: center; font-family: 'Courier Prime', monospace; font-weight: bold; color: #f97316; cursor: pointer; }
+        .tape-blank.filled { border-color: #f97316; }
+        .tape-piece { background: #2c1e16; color: #fdf6e3; font-family: 'Courier Prime', monospace; padding: 12px 24px; position: relative; cursor: pointer; box-shadow: 4px 4px 0px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        .tape-piece:hover { transform: translateY(-3px); background: #f97316; color: #2c1e16; }
+        .tape-piece.used { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen bg-[#111] overflow-hidden relative">
+
+    <!-- SAMPLE WATERMARK -->
+    <div class="sample-watermark"></div>
+
+    <!-- ================= PERFECT FLEX LAYOUT WRAPPER ================= -->
+    <div class="flex-1 flex flex-col w-full h-full max-w-[1600px] mx-auto p-1 lg:p-3 gap-2 z-10">
+        
+        <!-- MAIN PANEL (Slides Area) -->
+        <main class="flex-1 flex flex-col bg-amp-panel rounded-3xl border-[4px] border-[#0a0a0a] shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden">
+            
+            <!-- THE ANALOG SCREEN -->
+            <div class="flex-1 m-2 lg:m-4 rounded-2xl analog-screen shadow-paper p-6 lg:p-10 overflow-y-auto no-scroll flex flex-col allow-select" id="slides-container">
+                
+                <!-- WATERMARK -->
+                <div class="absolute bottom-6 right-8 z-0 text-vintage-ink/5 font-black font-oswald text-5xl lg:text-7xl tracking-widest pointer-events-none uppercase transform -rotate-1">
+                    WOLFFY
+                </div>
+
+                <!-- SLIDE 01: LINER NOTES (INTRO) -->
+                <section class="slide active">
+                    <div class="w-full max-w-5xl mx-auto text-center relative z-20">
+                        <h2 class="font-mono font-bold text-vintage-orange tracking-[0.3em] uppercase text-sm mb-4">Masterclass Preview • Side A</h2>
+                        <h1 class="text-6xl lg:text-8xl font-black font-oswald leading-none text-vintage-ink tracking-tight mb-8">Have You Ever<br><span class="text-vintage-blue">Seen The Rain</span></h1>
+                        <div class="border-y-2 border-vintage-ink/10 py-8 mb-8 bg-white/30 rounded-xl">
+                            <p class="font-mono text-xl lg:text-2xl text-vintage-ink/80 font-bold mb-4">> TARGET: A2 (Pre-Intermediate)</p>
+                            <p class="font-mono text-xl lg:text-2xl text-vintage-ink/80 font-bold mb-4">> GRAMMAR: Present Perfect (Life Experiences)</p>
+                            <p class="font-mono text-xl lg:text-2xl text-vintage-ink/80 font-bold">> AESTHETICS: Vintage 70s Studio</p>
+                        </div>
+                        <div class="bg-vintage-orange/10 p-6 rounded-xl border border-vintage-orange/30 inline-block">
+                            <p class="font-mono text-vintage-ink font-bold text-xl mb-2">INSTRUCTIONS:</p>
+                            <p class="font-outfit text-lg md:text-xl text-vintage-ink/80 font-medium">Navigate using the bottom console.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SLIDE 02: VIBE CHECK -->
+                <section class="slide">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-8 relative z-20">Vibe Check</h1>
+                    <p class="text-2xl lg:text-3xl text-vintage-ink/90 mb-8 text-center max-w-4xl relative z-20">How do you usually feel when it's raining heavily outside?</p>
+                    <div class="space-y-4 w-full max-w-4xl options-group relative z-20">
+                        <button class="w-full text-left bg-white/60 border-2 border-vintage-ink/10 p-6 rounded-2xl text-xl font-medium hover:border-vintage-orange mcq-btn" onclick="selectMCQ(this, 'any', 'hub-vibe')">☕ I feel cozy. I want to drink coffee and watch a movie.</button>
+                        <button class="w-full text-left bg-white/60 border-2 border-vintage-ink/10 p-6 rounded-2xl text-xl font-medium hover:border-vintage-orange mcq-btn" onclick="selectMCQ(this, 'any', 'hub-vibe')">😴 I feel tired and lazy. I just want to sleep.</button>
+                        <button class="w-full text-left bg-white/60 border-2 border-vintage-ink/10 p-6 rounded-2xl text-xl font-medium hover:border-vintage-orange mcq-btn" onclick="selectMCQ(this, 'any', 'hub-vibe')">😔 I feel a little sad or melancholic.</button>
+                    </div>
+                    <div class="hidden mt-6 p-6 border-l-8 border-vintage-orange bg-vintage-orange/10 rounded-r-2xl w-full max-w-4xl relative z-20" id="hub-vibe">
+                        <p class="text-vintage-orange font-mono text-sm mb-2 uppercase tracking-widest font-bold">Speaking Starter</p>
+                        <p class="text-vintage-ink italic text-2xl">"When it's raining, I usually feel..."</p>
+                    </div>
+                </section>
+
+                <!-- SLIDE 03: VOCAB POLAROIDS -->
+                <section class="slide">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-10 relative z-20">Vocabulary</h1>
+                    <p class="text-xl font-outfit text-vintage-ink/80 mb-6 text-center z-20">Click the polaroids to reveal the vocabulary.</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-6xl mx-auto relative z-20">
+                        <div class="polaroid rounded-xl" onclick="flipPolaroid(this, 'Calm', 'Peaceful, quiet, and without worry.', 'Are you a calm person?')">
+                            <div class="bg-gray-100 h-40 w-full flex items-center justify-center mb-4"><span class="text-6xl">😌</span></div>
+                            <p class="font-mono font-bold text-center text-xl word-label text-vintage-ink">???</p>
+                        </div>
+                        <div class="polaroid rounded-xl" onclick="flipPolaroid(this, 'Storm', 'Very bad weather with heavy rain and wind.', 'Worst storm ever?')">
+                            <div class="bg-gray-100 h-40 w-full flex items-center justify-center mb-4"><span class="text-6xl">⛈️</span></div>
+                            <p class="font-mono font-bold text-center text-xl word-label text-vintage-ink">???</p>
+                        </div>
+                        <div class="polaroid rounded-xl" onclick="flipPolaroid(this, 'Shining', 'Giving out bright light.', 'Sun or Clouds?')">
+                            <div class="bg-gray-100 h-40 w-full flex items-center justify-center mb-4"><span class="text-6xl">☀️</span></div>
+                            <p class="font-mono font-bold text-center text-xl word-label text-vintage-ink">???</p>
+                        </div>
+                        <div class="polaroid rounded-xl" onclick="flipPolaroid(this, 'Ever', 'At any time in your life.', 'Traveled alone?')">
+                            <div class="bg-gray-100 h-40 w-full flex items-center justify-center mb-4"><span class="text-6xl">🌎</span></div>
+                            <p class="font-mono font-bold text-center text-xl word-label text-vintage-ink">???</p>
+                        </div>
+                    </div>
+                    <div id="pol-hub" class="hidden mt-10 p-6 bg-white/90 rounded-2xl border-4 border-vintage-ink/10 w-full max-w-4xl text-left relative z-20 shadow-lg">
+                        <h3 id="p-title" class="text-4xl font-black text-vintage-orange mb-2">Word</h3>
+                        <p id="p-def" class="text-xl text-vintage-ink/80 font-medium mb-4">Definition...</p>
+                        <p id="p-q" class="text-vintage-ink font-bold font-mono text-2xl mt-2">> Question</p>
+                    </div>
+                </section>
+
+                <!-- SLIDE 04: MUSIC VIDEO -->
+                <section class="slide h-full">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-6 relative z-20">The Performance</h1>
+                    <div class="w-full max-w-5xl rounded-2xl overflow-hidden border-8 border-[#2c1e16] bg-black shadow-2xl relative aspect-video z-20">
+                        <iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/u1V8YRJnr4Q?rel=0" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <div class="mt-6 p-4 bg-vintage-blue/10 border-l-8 border-vintage-blue max-w-5xl w-full text-center md:text-left relative z-20 rounded-r-xl">
+                        <p class="font-bold text-lg text-vintage-ink uppercase tracking-widest">> Visual Focus: Rhythm vs Mood</p>
+                    </div>
+                </section>
+
+                <!-- SLIDE 05: THE LYRICS VIEW -->
+                <section class="slide">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-6 relative z-20">Lyrics Analysis</h1>
+                    <p class="text-xl font-bold text-vintage-orange mb-6 text-center relative z-20 animate-pulse">Click the orange words for Interactive Insights!</p>
+                    <div class="w-full max-w-4xl flex-1 bg-white/60 border-4 border-vintage-ink/5 rounded-3xl p-10 overflow-y-auto shadow-2xl text-center relative z-20">
+                        <div class="space-y-6 text-2xl lg:text-4xl font-black font-oswald text-vintage-ink/80 leading-loose">
+                            <p>Someone told me long <span class="lyric-highlight" onclick="openLyricInsight('ago')">ago</span></p>
+                            <p>There's a <span class="lyric-highlight" onclick="openLyricInsight('calm-storm')">calm before the storm</span></p>
+                            <p>I know, it's been comin' for some time</p>
+                            <br>
+                            <p class="text-vintage-ink text-3xl md:text-4xl lg:text-5xl">I want to know,</p>
+                            <p class="text-3xl md:text-4xl lg:text-5xl"><span class="lyric-highlight" onclick="openLyricInsight('have-ever')">Have you ever</span> seen the rain?</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SLIDE 06: GRAMMAR INTRO -->
+                <section class="slide">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-6 relative z-20">Present Perfect</h1>
+                    <p class="text-2xl lg:text-3xl text-center mb-10 max-w-4xl relative z-20">Use this for <strong class="text-vintage-orange">Life Experiences</strong>. The exact time is not important.</p>
+                    <div class="flex flex-col gap-6 w-full max-w-4xl relative z-20">
+                        <div class="bg-white/90 p-8 rounded-2xl border-l-8 border-vintage-orange shadow-lg">
+                            <div class="flex justify-between items-end text-lg font-bold mb-6"><span>Birth</span><span class="text-vintage-orange font-oswald text-4xl tracking-wide">"Have you ever seen...?"</span><span>Now</span></div>
+                            <div class="h-2 w-full bg-vintage-orange/20 rounded-full relative"><div class="absolute inset-0 bg-vintage-orange rounded-full"></div></div>
+                            <p class="text-center text-lg opacity-60 mt-6 italic font-medium">"Ever" covers your entire life up to now.</p>
+                        </div>
+                        <div class="bg-white/90 p-8 rounded-2xl border-l-8 border-emerald-500 shadow-lg opacity-70">
+                            <div class="flex justify-between items-end text-lg font-bold mb-6"><span>Past</span><span class="text-emerald-600 font-oswald text-4xl tracking-wide">"Did you see... yesterday?"</span><span>Now</span></div>
+                            <div class="h-2 w-full bg-emerald-100 rounded-full relative"><div class="absolute left-1/2 w-6 h-6 bg-emerald-500 -top-2 rounded-full shadow-md"></div></div>
+                            <p class="text-center text-lg opacity-60 mt-6 italic font-medium">Simple Past focuses on a finished, specific dot in time.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SLIDE 07: GRAMMAR TUNER -->
+                <section class="slide">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-8 relative z-20">Grammar Tuner</h1>
+                    <div class="bg-amp-panel p-10 rounded-3xl shadow-2xl flex flex-col md:flex-row items-center gap-10 border-4 border-amp-dark w-full max-w-5xl relative z-20">
+                        
+                        <div class="bg-[#0a0a0a] border-4 border-gray-600 rounded-2xl overflow-hidden w-full h-[320px] flex items-center justify-center p-8 relative shadow-inner">
+                            
+                            <!-- PAST -->
+                            <div id="tun-past" class="text-center transition-all duration-300 absolute inset-0 flex flex-col justify-center items-center opacity-100 translate-y-0 pointer-events-auto">
+                                <div class="mb-8">
+                                    <p class="font-mono text-2xl lg:text-4xl text-emerald-400 font-bold">Did you see the rain yesterday?</p>
+                                    <p class="text-sm text-white/40 mt-3 uppercase tracking-widest font-bold">Finished Action / Specific Time</p>
+                                </div>
+                                <div class="w-1/2 h-px bg-white/10 mb-8"></div>
+                                <div>
+                                    <p class="font-mono text-2xl lg:text-4xl text-emerald-400 font-bold">I went to London in 2018.</p>
+                                    <p class="text-sm text-white/40 mt-3 uppercase tracking-widest font-bold">Specific Event in the past</p>
+                                </div>
+                            </div>
+
+                            <!-- PERFECT -->
+                            <div id="tun-perf" class="text-center transition-all duration-300 absolute inset-0 flex flex-col justify-center items-center opacity-0 translate-y-8 pointer-events-none">
+                                <div class="mb-8">
+                                    <p class="font-mono text-2xl lg:text-4xl text-vintage-orange font-bold">Have you ever seen the rain?</p>
+                                    <p class="text-sm text-white/40 mt-3 uppercase tracking-widest font-bold">Life Experience / Unspecified Time</p>
+                                </div>
+                                <div class="w-1/2 h-px bg-white/10 mb-8"></div>
+                                <div>
+                                    <p class="font-mono text-2xl lg:text-4xl text-vintage-orange font-bold">I have been to London.</p>
+                                    <p class="text-sm text-white/40 mt-3 uppercase tracking-widest font-bold">Experience up to now</p>
+                                </div>
+                            </div>
+
+                        </div>
+                        
+                        <div class="flex flex-col items-center gap-4 shrink-0 px-4">
+                            <div class="w-24 h-12 bg-[#111] rounded-full p-1 cursor-pointer border-2 border-gray-600 relative shadow-inner" onclick="toggleTuner()">
+                                <div id="tuner-knob" class="w-10 h-10 bg-gray-200 rounded-full shadow-lg transition-transform duration-300 absolute left-1 flex items-center justify-center">
+                                    <div class="w-4 h-4 rounded-full bg-gray-400"></div>
+                                </div>
+                            </div>
+                            <span class="font-mono text-sm text-gray-400 font-bold tracking-widest">TUNER</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SLIDE 08: TAPE SPLICER -->
+                <section class="slide">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-10 relative z-20">Tape Splicer</h1>
+                    <div class="bg-[#1e1e1e] p-12 rounded-3xl border-[8px] border-[#2c1e16] shadow-2xl text-center w-full max-w-5xl relative z-20">
+                        <div class="text-3xl lg:text-5xl font-bold mb-16 text-white font-mono flex flex-wrap justify-center items-center leading-loose">
+                            " <span class="tape-blank" id="t-blank1" onclick="returnTape(1)"></span> you <span class="tape-blank" id="t-blank2" onclick="returnTape(2)"></span> seen the rain? "
+                        </div>
+                        <div class="flex gap-6 justify-center flex-wrap" id="tape-bank">
+                            <div class="tape-piece text-2xl font-bold rounded-lg" onclick="fillTape(this, 'Did')">Did</div>
+                            <div class="tape-piece text-2xl font-bold rounded-lg" onclick="fillTape(this, 'Have')">Have</div>
+                            <div class="tape-piece text-2xl font-bold rounded-lg" onclick="fillTape(this, 'ever')">ever</div>
+                            <div class="tape-piece text-2xl font-bold rounded-lg" onclick="fillTape(this, 'never')">never</div>
+                        </div>
+                    </div>
+                    <div id="tape-hub" class="hidden mt-10 p-6 bg-emerald-500/20 font-mono font-black text-emerald-500 text-3xl border-4 border-emerald-500 rounded-2xl relative z-20 uppercase tracking-widest">> RECORDING SUCCESSFUL!</div>
+                </section>
+
+                <!-- SLIDE 09: SPEAKING ROLEPLAY -->
+                <section class="slide">
+                    <h1 class="text-4xl lg:text-6xl font-black font-oswald text-vintage-ink mb-10 relative z-20">Speaking: Experiences</h1>
+                    <div class="space-y-6 w-full max-w-4xl relative z-20">
+                        
+                        <div class="bg-[#fdf6e3] p-8 rounded-2xl shadow-xl border-4 border-[#f97316]/20 cursor-pointer hover:border-[#f97316] transition-all w-full relative group" onclick="toggleSpk(this)">
+                            <div class="absolute -top-4 left-6 bg-vintage-ink text-white font-black uppercase px-4 py-1 rounded-full text-sm shadow-md">Question 1</div>
+                            <p class="font-bold text-2xl lg:text-3xl text-vintage-ink mt-2">> Have you ever traveled to another country?</p>
+                            <div class="spk-follow hidden mt-6 pt-6 border-t-2 border-dashed border-vintage-ink/20">
+                                <span class="bg-vintage-blue text-white font-bold px-3 py-1 rounded uppercase text-xs">Follow Up</span>
+                                <p class="text-vintage-blue mt-4 font-medium italic text-2xl">If yes, when did you go? Did you like it?</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#fdf6e3] p-8 rounded-2xl shadow-xl border-4 border-[#f97316]/20 cursor-pointer hover:border-[#f97316] transition-all w-full relative group" onclick="toggleSpk(this)">
+                            <div class="absolute -top-4 left-6 bg-vintage-ink text-white font-black uppercase px-4 py-1 rounded-full text-sm shadow-md">Question 2</div>
+                            <p class="font-bold text-2xl lg:text-3xl text-vintage-ink mt-2">> Have you ever eaten something very strange?</p>
+                            <div class="spk-follow hidden mt-6 pt-6 border-t-2 border-dashed border-vintage-ink/20">
+                                <span class="bg-vintage-blue text-white font-bold px-3 py-1 rounded uppercase text-xs">Follow Up</span>
+                                <p class="text-vintage-blue mt-4 font-medium italic text-2xl">If yes, what was it? How did it taste?</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- SLIDE 10: END SAMPLE -->
+                <section class="slide">
+                    <div class="text-center relative z-20">
+                        <div class="w-48 h-48 lg:w-64 lg:h-64 bg-gradient-to-tr from-vintage-orange to-vintage-blue rounded-full flex items-center justify-center border-[12px] border-vintage-ink mb-10 mx-auto shadow-2xl transform -rotate-6">
+                            <span class="text-white font-black font-oswald text-6xl lg:text-7xl">WOLFFY</span>
+                        </div>
+                        <h1 class="text-5xl lg:text-7xl font-black font-oswald text-vintage-ink mb-6">End of Sample</h1>
+                        <p class="text-2xl lg:text-3xl font-medium opacity-70 mb-12">This is just a taste of what WOLFFY can do.</p>
+                        <button onclick="goToSlide(0)" class="bg-vintage-ink text-white font-mono font-bold text-xl px-16 py-6 rounded-2xl hover:bg-vintage-orange hover:text-black transition-colors shadow-xl">EJECT & RESTART</button>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- SLIM DASHBOARD CONTROLS -->
+            <div class="h-20 lg:h-24 bg-[#1a1a1a] border-t-2 border-gray-800 flex items-center justify-between px-6 lg:px-12 shrink-0 relative z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+                
+                <!-- Mini Vinyl -->
+                <div class="flex items-center gap-6 w-1/3">
+                    <div class="relative w-12 h-12 lg:w-16 lg:h-16 shrink-0">
+                        <div id="vinyl" class="absolute inset-0 rounded-full bg-[#111] shadow-lg border-2 border-[#222] vinyl-spin overflow-hidden">
+                            <img src="https://m.media-amazon.com/images/I/61hc8z07tNL._UF1000,1000_QL80_.jpg" class="w-full h-full object-cover opacity-80 grayscale">
+                        </div>
+                    </div>
+                    <div class="hidden lg:flex flex-col bg-black/50 border border-white/5 rounded-lg px-4 py-2 w-48 shadow-inner">
+                        <span id="lcd-trk" class="text-vintage-orange font-mono text-[11px] font-bold tracking-widest">TRACK 01</span>
+                        <div class="w-full bg-gray-800 h-1.5 mt-1.5 rounded-full overflow-hidden"><div id="lcd-prog" class="h-full bg-vintage-orange w-0 transition-all duration-300"></div></div>
+                    </div>
+                </div>
+
+                <!-- Transport Controls -->
+                <div class="flex flex-col items-center justify-center w-1/3">
+                    <div class="flex items-center gap-4 lg:gap-10">
+                        <button onclick="prevSlide()" class="chunky-btn w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center shadow-lg">
+                            <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                        </button>
+                        <button onclick="triggerPraise('BRILLIANT!', 'Excellent work!')" class="bg-green-600 text-white font-bold font-outfit px-4 py-2 rounded-lg border-b-4 border-green-800 hover:bg-green-500 transition-colors shadow-lg text-sm hidden md:block tracking-widest uppercase">
+                            PRAISE
+                        </button>
+                        <button onclick="nextSlide()" class="chunky-btn w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center shadow-lg">
+                            <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tools -->
+                <div class="flex items-center justify-end gap-4 lg:gap-6 w-1/3">
+                    <button onclick="toggleWhiteboard()" class="chunky-btn p-3 rounded-xl shadow-lg group" title="Open Whiteboard">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.5" class="group-active:scale-90 transition-transform"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </button>
+                    <button onclick="toggleFS()" class="chunky-btn p-3 rounded-xl hidden md:flex shadow-lg group" title="Full Screen">
+                        <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2.5" class="group-active:scale-90 transition-transform"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- WHITEBOARD (LOUSA) PRO -->
+    <aside id="wbPanel" class="fixed top-0 right-0 h-full w-full md:w-[500px] bg-[#fdf6e3] border-l-[16px] border-[#2c1e16] z-[100] transform translate-x-full transition-transform duration-500 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+        <div class="p-8 border-b-2 border-[#2c1e16]/10 flex justify-between items-center bg-white/50 relative">
+            <button onclick="toggleWhiteboard()" class="absolute top-8 -left-20 w-20 h-20 bg-[#f97316] text-white rounded-l-full shadow-2xl flex items-center justify-center hover:bg-orange-600 transition-all border-y-4 border-l-4 border-[#2c1e16] group">
+                <span class="text-4xl font-black group-hover:scale-110 transition-transform">✕</span>
+            </button>
+            <h2 class="text-3xl font-black italic font-playfair text-[#2c1e16] tracking-tighter">MANAGER'S NOTES</h2>
+        </div>
+        <div class="p-8 border-b border-[#2c1e16]/5">
+            <span class="text-sm font-bold text-[#2c1e16]/40 uppercase tracking-widest block mb-4">Praise Drops</span>
+            <div class="flex gap-4">
+                <button onclick="triggerPraise('FAR OUT! ✌️', 'Awesome job!')" class="px-6 py-3 border-4 border-[#f97316] text-[#f97316] rounded-xl font-bold text-lg hover:bg-[#f97316] hover:text-white transition-all shadow-sm">FAR OUT!</button>
+                <button onclick="triggerPraise('GROOVY! 🌼', 'You nailed it!')" class="px-6 py-3 border-4 border-[#0ea5e9] text-[#0ea5e9] rounded-xl font-bold text-lg hover:bg-[#0ea5e9] hover:text-white transition-all shadow-sm">GROOVY!</button>
+            </div>
+        </div>
+        <textarea id="wbText" class="flex-1 bg-transparent p-10 outline-none resize-none text-[#2c1e16] font-medium text-2xl leading-[2.5rem] placeholder:text-[#2c1e16]/20" placeholder="Type vocabulary, notes or translations here..."></textarea>
+    </aside>
+
+    <!-- INSIGHT OVERLAY -->
+    <div id="insight-overlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 opacity-0 pointer-events-none transition-opacity duration-300 p-4">
+        <div class="bg-[#1a1a1a] border-4 border-vintage-orange rounded-3xl p-10 lg:p-14 max-w-3xl w-full shadow-[0_0_80px_rgba(249,115,22,0.3)] relative">
+            <button onclick="closeLyricInsight()" class="absolute top-6 right-6 text-gray-500 hover:text-white bg-black/50 w-12 h-12 rounded-full hover:bg-red-500 transition-all font-bold text-xl flex items-center justify-center">✕</button>
+            <h2 id="ins-title" class="text-4xl lg:text-5xl font-black text-white mb-6 italic tracking-tight">Insight</h2>
+            <p id="ins-explanation" class="text-xl lg:text-2xl text-gray-300 border-l-4 border-vintage-orange pl-6 mb-10 leading-relaxed font-outfit">...</p>
+            <div class="bg-black/50 p-8 rounded-3xl border border-gray-800">
+                <p id="ins-q" class="text-vintage-orange font-bold mb-8 italic text-2xl font-playfair tracking-wide">Question?</p>
+                <div id="ins-opts" class="flex flex-col gap-4 font-outfit"></div>
+                <div id="ins-fb" class="hidden mt-8 text-[#10b981] font-black text-3xl text-center animate-pulse uppercase tracking-widest">GREAT JOB! 🎸</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRAISE OVERLAY -->
+    <div id="praise-overlay" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 opacity-0 pointer-events-none transition-opacity duration-300 p-4">
+        <div id="praise-card" class="bg-vintage-cream border-[12px] border-vintage-orange rounded-[3rem] p-16 lg:p-20 max-w-3xl w-full shadow-[0_0_100px_rgba(249,115,22,0.5)] relative transform scale-50 transition-transform duration-500 flex flex-col items-center justify-center text-center">
+            <h2 id="praise-main" class="text-7xl lg:text-9xl font-black text-vintage-ink mb-6 font-oswald uppercase tracking-wider">LOVELY!</h2>
+            <p id="praise-sub" class="text-2xl lg:text-4xl text-white bg-vintage-ink px-6 py-2 rounded-xl font-bold font-mono uppercase tracking-widest">Spot on!</p>
+        </div>
+    </div>
+
+    <!-- JS LOGIC -->
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length; 
+
+        function init() { updateUI(); }
+
+        function nextSlide() { if(currentSlide < totalSlides-1) { slides[currentSlide].classList.remove('active'); currentSlide++; slides[currentSlide].classList.add('active'); updateUI(); if(currentSlide === totalSlides-1) shootConfetti(); } }
+        function prevSlide() { if(currentSlide > 0) { slides[currentSlide].classList.remove('active'); currentSlide--; slides[currentSlide].classList.add('active'); updateUI(); } }
+        function goToSlide(i) { slides[currentSlide].classList.remove('active'); currentSlide = i; slides[currentSlide].classList.add('active'); updateUI(); }
+
+        function updateUI() {
+            const trkLabel = document.getElementById('lcd-trk');
+            if(trkLabel) trkLabel.innerText = `TRACK ${(currentSlide+1).toString().padStart(2,'0')}`;
+            
+            const prog = document.getElementById('lcd-prog');
+            if(prog && totalSlides > 1) prog.style.width = `${(currentSlide/(totalSlides-1))*100}%`;
+            
+            const container = document.getElementById('slides-container');
+            if(container) container.scrollTop = 0;
+        }
+
+        function toggleFS() { 
+            const doc = window.document; const docEl = doc.documentElement;
+            const reqFS = docEl.requestFullscreen || docEl.webkitRequestFullScreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+            const exitFS = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.webkitFullscreenElement && !doc.mozFullScreenElement && !doc.msFullscreenElement) {
+                if(reqFS) { const p = reqFS.call(docEl); if(p) p.catch(()=>{}); }
+            } else { if(exitFS) exitFS.call(doc); }
+        }
+
+        function toggleWhiteboard() { document.getElementById('wbPanel').classList.toggle('translate-x-full'); }
+
+        // Praise Logic
+        function triggerPraise(main, sub) {
+            const wb = document.getElementById('wbPanel');
+            if(wb && !wb.classList.contains('translate-x-full')) {
+                wb.classList.add('translate-x-full');
+            }
+            const overlay = document.getElementById('praise-overlay');
+            const card = document.getElementById('praise-card');
+            document.getElementById('praise-main').innerText = main;
+            document.getElementById('praise-sub').innerText = sub;
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => card.classList.replace('scale-50', 'scale-100'), 50);
+            shootConfetti();
+            setTimeout(() => {
+                card.classList.replace('scale-100', 'scale-50');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500); 
+        }
+
+        // Tuner Logic
+        function toggleTuner() {
+            const knob = document.getElementById('tuner-knob');
+            const past = document.getElementById('tun-past');
+            const perf = document.getElementById('tun-perf');
+            
+            if(knob.classList.contains('translate-x-10')) {
+                // Switch to Past
+                knob.classList.remove('translate-x-10');
+                past.classList.replace('opacity-0','opacity-100'); 
+                past.classList.replace('translate-y-8','translate-y-0');
+                past.classList.remove('pointer-events-none');
+                perf.classList.replace('opacity-100','opacity-0'); 
+                perf.classList.replace('translate-y-0','translate-y-8');
+                perf.classList.add('pointer-events-none');
+            } else {
+                // Switch to Present Perfect
+                knob.classList.add('translate-x-10');
+                past.classList.replace('opacity-100','opacity-0'); 
+                past.classList.replace('translate-y-0','translate-y-8');
+                past.classList.add('pointer-events-none');
+                perf.classList.replace('opacity-0','opacity-100'); 
+                perf.classList.replace('translate-y-8','translate-y-0');
+                perf.classList.remove('pointer-events-none');
+            }
+        }
+
+        // Tape Splicer Logic
+        let activeB = 1;
+        const expectedT = { 1: "Have", 2: "ever" };
+        function fillTape(btn, word) {
+            if(activeB > 2) return;
+            if(expectedT[activeB] === word) {
+                const b = document.getElementById(`t-blank${activeB}`);
+                if(b) { b.innerText = word; b.classList.add('filled'); }
+                btn.classList.add('used'); activeB++;
+                if(activeB > 2) { document.getElementById('tape-hub').classList.remove('hidden'); shootConfetti(); }
+            } else { btn.classList.add('shake'); setTimeout(()=>btn.classList.remove('shake'),400); }
+        }
+        function returnTape(n) {
+            const b = document.getElementById(`t-blank${n}`); 
+            if(!b) return;
+            const w = b.innerText; if(!w) return;
+            b.innerText = ""; b.classList.remove('filled'); 
+            document.querySelectorAll('.tape-piece').forEach(p => { if(p.innerText === w) p.classList.remove('used'); });
+            activeB = n; document.getElementById('tape-hub').classList.add('hidden');
+        }
+
+        // MCQ Selection
+        function selectMCQ(btn, type, hubId) {
+            const group = btn.closest('.options-group');
+            group.querySelectorAll('.mcq-btn').forEach(b => { b.classList.remove('bg-vintage-orange','text-white','border-vintage-orange'); b.classList.add('bg-white/60'); });
+            if(type === 'correct' || type === 'any') { btn.classList.add('bg-vintage-orange', 'text-white', 'border-vintage-orange'); if(hubId) document.getElementById(hubId).classList.remove('hidden'); shootConfetti(); }
+            else { btn.classList.add('shake', 'border-red-500'); setTimeout(() => btn.classList.remove('shake','border-red-500'), 400); }
+        }
+
+        // Polaroid Selection
+        function flipPolaroid(el, t, def, q) {
+            document.getElementById('pol-hub').classList.remove('hidden');
+            document.getElementById('p-title').innerText = t;
+            document.getElementById('p-def').innerText = def;
+            document.getElementById('p-q').innerText = q;
+            el.querySelector('.word-label').innerText = t; el.querySelector('.word-label').classList.replace('text-vintage-ink', 'text-vintage-orange');
+        }
+        
+        function toggleSpk(el) { el.querySelector('.spk-follow').classList.toggle('hidden'); }
+
+        // Insights
+        function openLyricInsight(k) {
+            const data = {
+                'ago': {t:'Long ago', e:'Specific time in the past.', q:'What did you do a few days ago?', o:['Watched a movie', 'Studied English']},
+                'calm-storm': {t:'Calm before the storm', e:'A quiet, peaceful period before trouble or chaos happens.', q:'Have you ever felt this in your life?', o:['Yes, many times','No, never']},
+                'sunny-day': {t:'Sunny day', e:'Metaphor for success and happiness.', q:'Can people be sad when everything is "perfect"?', o:['Yes, emotions are complex.', 'No, that makes no sense.']},
+                'shining-water': {t:'Shining down like water', e:'Comparing intense sun to heavy rain.', q:'Which weather do you prefer?', o:['Sunny', 'Rainy']},
+                'have-ever': {t:'Have you ever...', e:'Present Perfect. Asking about life experiences without a specific date.', q:'Have you ever seen snow in person?', o:['Yes, I have!','No, I haven\'t']}
+            }[k];
+            if(!data) return;
+            document.getElementById('ins-title').innerText=data.t; document.getElementById('ins-explanation').innerText=data.e; document.getElementById('ins-q').innerText=data.q;
+            const con = document.getElementById('ins-opts'); con.innerHTML='';
+            data.o.forEach(o => { const b=document.createElement('button'); b.className='bg-white/10 p-5 rounded-2xl text-left font-bold text-2xl hover:bg-white/20 transition-colors border-2 border-transparent hover:border-vintage-orange'; b.innerText=o; b.onclick=()=>document.getElementById('ins-fb').classList.remove('hidden'); con.appendChild(b); });
+            document.getElementById('ins-fb').classList.add('hidden');
+            document.getElementById('insight-overlay').classList.replace('opacity-0','opacity-100'); document.getElementById('insight-overlay').classList.replace('pointer-events-none','pointer-events-auto');
+        }
+        function closeLyricInsight() { document.getElementById('insight-overlay').classList.replace('opacity-100','opacity-0'); document.getElementById('insight-overlay').classList.replace('pointer-events-auto','pointer-events-none'); }
+
+        // Confetti
+        function shootConfetti() {
+            const colors = ['#f97316', '#0ea5e9', '#ffffff'];
+            for(let i=0; i<60; i++) {
+                const c = document.createElement('div'); c.className='confetti rounded-sm';
+                c.style.left = Math.random()*100+'vw'; c.style.backgroundColor = colors[Math.floor(Math.random()*3)];
+                c.style.animation = `fall ${Math.random()*3+2}s linear forwards`;
+                document.body.appendChild(c); setTimeout(()=>c.remove(), 4000);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
